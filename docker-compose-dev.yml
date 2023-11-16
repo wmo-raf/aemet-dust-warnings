@@ -1,0 +1,30 @@
+services:
+  aemet-warnings:
+    container_name: aemet_warnings
+    build:
+      context: .
+    restart: ${RESTART_POLICY}
+    command: sh -c "/wait && ./docker-entrypoint.sh && gunicorn --bind 0.0.0.0:8000 dustwarning:app"
+    volumes:
+      - ${STATE_VOLUME}:/data/state
+      - ${BOUNDARY_DATA_VOLUME}:/data/boundary_data
+    environment:
+      - DEBUG=False
+      - WAIT_HOSTS=ecmwf_db:5432
+      - WAIT_TIMEOUT=60
+      - STATE_DIR=/data/state
+      - BOUNDARY_DATA_DIR=/data/boundary_data
+      - SQLALCHEMY_DATABASE_URI=postgresql://${DB_USER}:${DB_PASSWORD}@aemet_db:5432/${DB_NAME}
+      - FLASK_APP=dustwarning/__init__.py
+    ports:
+      - ${PORT}:8000
+  aemet-db:
+    image: postgis/postgis:14-master
+    container_name: aemet_db
+    restart: ${RESTART_POLICY}
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - ${DB_PORT}:5432
