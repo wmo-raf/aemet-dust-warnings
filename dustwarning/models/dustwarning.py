@@ -34,22 +34,20 @@ class Boundary(db.Model):
 class DustWarning(db.Model):
     __tablename__ = "aemet_dust_warning"
     __table_args__ = (
-        db.UniqueConstraint("gid", "init_date", name='unique_dust_warming_date'),
+        db.UniqueConstraint("gid", "init_date", "forecast_date", name='unique_dust_warming_date'),
     )
 
     id = db.Column(db.Integer, primary_key=True)
     gid = db.Column(db.String(256), db.ForeignKey('aemet_country_boundary.gid', ondelete="CASCADE"), nullable=False)
     init_date = db.Column(db.DateTime, nullable=False)
-    day_one_val = db.Column(db.Integer, nullable=False)
-    day_two_val = db.Column(db.Integer, nullable=False)
-    day_three_val = db.Column(db.Integer, nullable=False)
+    forecast_date = db.Column(db.DateTime, nullable=False)
+    value = db.Column(db.Integer, nullable=False)
 
-    def __init__(self, gid, init_date, day_one_val, day_two_val, day_three_val):
+    def __init__(self, gid, init_date, forecast_date, value):
         self.gid = gid
         self.init_date = init_date
-        self.day_one_val = day_one_val
-        self.day_two_val = day_two_val
-        self.day_three_val = day_three_val
+        self.forecast_date = forecast_date
+        self.value = value
 
     def __repr__(self):
         return '<DustWarning %r>' % self.id
@@ -60,9 +58,8 @@ class DustWarning(db.Model):
             "id": self.id,
             "gid": self.gid,
             "init_date": self.init_date,
-            "day_one_val": self.day_one_val,
-            "day_two_val": self.day_two_val,
-            "day_three_val": self.day_three_val
+            "forecast_date": self.forecast_date,
+            "value": self.value,
         }
 
         return dust_warning

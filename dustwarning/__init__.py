@@ -117,3 +117,4 @@ from dustwarning import commands
 app.cli.add_command(commands.setup_schema)
 app.cli.add_command(commands.load_boundaries)
 app.cli.add_command(commands.load_warnings)
+app.cli.add_command(commands.create_pg_function)

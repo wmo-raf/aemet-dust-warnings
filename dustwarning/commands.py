@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import click
 from sqlalchemy import func
@@ -31,6 +31,50 @@ def setup_schema():
     db.session.commit()
 
     logging.info("[DBSETUP]: Done Setting up schema")
+
+
+@click.command(name="create_pg_function")
+def create_pg_function():
+    logging.info("[DBSETUP]: Creating pg function")
+
+    sql = f"""
+            CREATE OR REPLACE FUNCTION public.aemet_dust_warnings(
+            z integer,
+            x integer,
+            y integer,
+            iso text,
+            init_date timestamp without time zone)
+            RETURNS bytea
+            LANGUAGE 'plpgsql'
+            COST 100
+            STABLE STRICT PARALLEL SAFE 
+        AS $BODY$
+        DECLARE
+            result bytea;
+        BEGIN
+            WITH
+            bounds AS (
+                -- Convert tile coordinates to web mercator tile bounds
+                SELECT ST_TileEnvelope(z, x, y) AS geom
+            ),
+            mvt AS (
+                SELECT ST_AsMVTGeom(ST_Transform(s.geom, 3857), bounds.geom) AS geom, s.name, o.* FROM public.aemet_dust_warning o, bounds, public.aemet_country_boundary s
+            WHERE s.country_iso=iso AND o.gid=s.gid
+            )
+            -- Generate MVT encoding of final input record
+            SELECT ST_AsMVT(mvt, 'default')
+            INTO result
+            FROM mvt;
+
+            RETURN result;
+        END;
+        $BODY$;    
+    """
+
+    db.session.execute(text(sql))
+    db.session.commit()
+
+    logging.info("[DBSETUP]: Done Creating pg function")
 
 
 @click.command(name="load_boundaries")
@@ -111,11 +155,7 @@ def load_boundaries():
 def load_warnings():
     state = read_state()
 
-    day_vals = {
-        "day_one_val": "0",
-        "day_two_val": "1",
-        "day_three_val": "2"
-    }
+    day_vals = ["0", "1", "2"]
 
     last_update = state.get("last_update")
 
@@ -126,6 +166,7 @@ def load_warnings():
 
     if next_update:
         next_update_str = next_update.strftime("%Y%m%d")
+        next_update_str_iso = next_update.isoformat()
 
         for c, config in boundary_config.items():
             country_iso = config.get("iso")
@@ -136,7 +177,9 @@ def load_warnings():
 
             warnings_data = {}
 
-            for day_val_key, day_val in day_vals.items():
+            for day_val in day_vals:
+                forecast_date = next_update + timedelta(days=int(day_val))
+
                 geojson_url = geojson_url_template.format(date_str=next_update_str, day_val=day_val)
 
                 logging.info(f"[WARNINGS]: Fetching warnings for date {next_update_str} and day {day_val}")
@@ -166,41 +209,45 @@ def load_warnings():
                                 return False
 
                             gid = f"{country_iso}_{id_prop}"
-                            value = props.get("value")
+                            value = props["value"]
+
+                            d_data = {
+                                "gid": gid,
+                                "init_date": next_update,
+                                "forecast_date": forecast_date,
+                                "value": value
+                            }
 
                             if not warnings_data.get(gid):
-                                warnings_data[gid] = {
-                                    "gid": gid,
-                                    "init_date": next_update,
-                                    day_val_key: value
-                                }
+                                warnings_data[gid] = [d_data]
                             else:
-                                warnings_data[gid][day_val_key] = value
+                                warnings_data[gid].append(d_data)
+
                 except Exception as e:
                     logging.info(f"[WARNINGS]: {e}")
                     return False
 
-            for gid, warning_data in warnings_data.items():
-                db_warning = DustWarning.query.filter_by(init_date=warning_data.get("init_date"), gid=gid).first()
-                exists = False
+            for gid, warning_items in warnings_data.items():
+                for warning_data in warning_items:
+                    db_warning = DustWarning.query.filter_by(init_date=warning_data.get("init_date"),
+                                                             forecast_date=warning_data.get("forecast_date"),
+                                                             gid=gid).first()
+                    exists = False
 
-                if db_warning:
-                    exists = True
+                    if db_warning:
+                        exists = True
 
-                db_warning = DustWarning(**warning_data)
+                    db_warning = DustWarning(**warning_data)
 
-                if exists:
-                    logging.info('[WARNING]: UPDATE')
+                    if exists:
+                        logging.info('[WARNING]: UPDATE')
+                        db_warning.value = warning_data["value"]
+                    else:
+                        logging.info('[WARNING]: ADD')
+                        db.session.add(db_warning)
 
-                    for day_val_key, day_val in day_vals.items():
-                        setattr(db_warning, day_val_key, warning_data.get(day_val_key))
+                    db.session.commit()
 
-                else:
-                    logging.info('[WARNING]: ADD')
-                    db.session.add(db_warning)
-
-                db.session.commit()
-
-        update_state(next_update.isoformat())
+        update_state(next_update_str_iso)
 
         logging.info(f"[WARNINGS]: Done fetching warnings for date {next_update_str}")
