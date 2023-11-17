@@ -1,0 +1,35 @@
+# pull base image
+FROM python:3.8.2-slim-buster
+
+RUN apt-get update -y && apt-get install -y cron
+
+# set work directory
+WORKDIR /usr/src/app
+
+# set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# install dependencies
+RUN pip install --upgrade pip
+COPY ./requirements.txt /usr/src/app/requirements.txt
+RUN pip install -r requirements.txt
+RUN pip install gunicorn
+
+ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.9.0/wait /wait
+RUN chmod +x /wait
+
+# copy project
+COPY . /usr/src/app/
+
+# add synop.cron to crontab
+COPY ./aemet.cron /etc/cron.d/aemet.cron
+
+RUN chmod 0644 /etc/cron.d/aemet.cron && crontab /etc/cron.d/aemet.cron
+
+# copy entrypoint.sh
+COPY ./docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
+
+#run docker-entrypoint.sh
+ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]

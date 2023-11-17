@@ -10,7 +10,7 @@ services:
       - ${BOUNDARY_DATA_VOLUME}:/data/boundary_data
     environment:
       - DEBUG=False
-      - WAIT_HOSTS=ecmwf_db:5432
+      - WAIT_HOSTS=aemet_db:5432
       - WAIT_TIMEOUT=60
       - STATE_DIR=/data/state
       - BOUNDARY_DATA_DIR=/data/boundary_data

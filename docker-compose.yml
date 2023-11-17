@@ -12,13 +12,13 @@ services:
       - DEBUG=False
       - LOG=${LOG}
       - WAIT_HOSTS=${WAIT_HOSTS}
-      - WAIT_TIMEOUT=60
+      - WAIT_TIMEOUT=120
       - STATE_DIR=/data/state
       - BOUNDARY_DATA_DIR=/data/boundary_data
       - SQLALCHEMY_DATABASE_URI=${DATABASE_URI}
       - FLASK_APP=dustwarning/__init__.py
     ports:
-      - 8000
+      - 8000:8000
 networks:
   default:
     name: ${AHW_DOCKER_NETWORK}

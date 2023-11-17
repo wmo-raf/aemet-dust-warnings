@@ -236,15 +236,14 @@ def load_warnings():
 
             for gid, warning_items in warnings_data.items():
                 for warning_data in warning_items:
+                    exists = False
                     db_warning = DustWarning.query.filter_by(init_date=warning_data.get("init_date"),
                                                              forecast_date=warning_data.get("forecast_date"),
                                                              gid=gid).first()
-                    exists = False
-
                     if db_warning:
                         exists = True
-
-                    db_warning = DustWarning(**warning_data)
+                    else:
+                        db_warning = DustWarning(**warning_data)
 
                     if exists:
                         logging.info('[WARNING]: UPDATE')
@@ -252,7 +251,6 @@ def load_warnings():
                     else:
                         logging.info('[WARNING]: ADD')
                         db.session.add(db_warning)
-
                     db.session.commit()
 
         update_state(next_update_str_iso)
