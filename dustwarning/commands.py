@@ -43,7 +43,7 @@ def create_pg_function():
             x integer,
             y integer,
             iso text,
-            init_date timestamp without time zone)
+            forecast_date timestamp without time zone)
             RETURNS bytea
             LANGUAGE 'plpgsql'
             COST 100
@@ -51,7 +51,14 @@ def create_pg_function():
         AS $BODY$
         DECLARE
             result bytea;
+            initial_date timestamp without time zone;
+            f_date ALIAS FOR $5;
         BEGIN
+         -- If initial_date is not provided, determine the latest available initial_date
+         
+            SELECT MAX(init_date) INTO initial_date
+            FROM public.aemet_dust_warning;
+            
             WITH
             bounds AS (
                 -- Convert tile coordinates to web mercator tile bounds
@@ -59,7 +66,7 @@ def create_pg_function():
             ),
             mvt AS (
                 SELECT ST_AsMVTGeom(ST_Transform(s.geom, 3857), bounds.geom) AS geom, s.name, o.* FROM public.aemet_dust_warning o, bounds, public.aemet_country_boundary s
-            WHERE s.country_iso=iso AND o.gid=s.gid
+            WHERE s.country_iso=iso AND o.gid=s.gid AND o.init_date=initial_date AND o.forecast_date=f_date
             )
             -- Generate MVT encoding of final input record
             SELECT ST_AsMVT(mvt, 'default')
