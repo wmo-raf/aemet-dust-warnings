@@ -1,1 +1,2 @@
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 */10 * * * * cd /usr/src/app && python /usr/local/bin/flask load_warnings > /proc/1/fd/1 2>/proc/1/fd/2
