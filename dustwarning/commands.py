@@ -65,8 +65,19 @@ def create_pg_function():
                 SELECT ST_TileEnvelope(z, x, y) AS geom
             ),
             mvt AS (
-                SELECT ST_AsMVTGeom(ST_Transform(s.geom, 3857), bounds.geom) AS geom, s.name, o.* FROM public.aemet_dust_warning o, bounds, public.aemet_country_boundary s
-            WHERE s.country_iso=iso AND o.gid=s.gid AND o.init_date=initial_date AND o.forecast_date=f_date
+                SELECT 
+                    ST_AsMVTGeom(ST_Transform(s.geom, 3857), bounds.geom) AS geom, 
+                    s.name, 
+                    o.*,
+                    CASE
+                        WHEN o.value = 0 THEN 'Normal'
+                        WHEN o.value = 1 THEN 'High'
+                        WHEN o.value = 2 THEN 'Very High'
+                        WHEN o.value = 3 THEN 'Extremely High'
+                        ELSE 'Unknown'
+                    END AS level 
+                FROM public.aemet_dust_warning o, bounds, public.aemet_country_boundary s
+                WHERE s.country_iso=iso AND o.gid=s.gid AND o.init_date=initial_date AND o.forecast_date=f_date
             )
             -- Generate MVT encoding of final input record
             SELECT ST_AsMVT(mvt, 'default')
