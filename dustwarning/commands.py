@@ -54,9 +54,9 @@ def create_pg_function():
             initial_date timestamp without time zone;
             f_date ALIAS FOR $5;
         BEGIN
-         -- If initial_date is not provided, determine the latest available initial_date
+         -- If initial_date is not provided, determine the latest available, minus 1
          
-            SELECT MAX(init_date) INTO initial_date
+            SELECT MAX(init_date - INTERVAL '1 day') INTO initial_date
             FROM public.aemet_dust_warning;
             
             WITH
