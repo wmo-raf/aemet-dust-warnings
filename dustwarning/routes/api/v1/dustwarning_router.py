@@ -18,7 +18,7 @@ def get_available_dates():
     latest_init_date = DustWarning.query.order_by(desc(DustWarning.init_date)).first()
 
     if latest_init_date:
-        latest_init_date = latest_init_date.init_date - timedelta(days=1)
+        latest_init_date = latest_init_date.init_date
         dates.append(latest_init_date)
 
         # add next two days

@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timedelta
 
 import click
+import pytz
 from sqlalchemy import func
 from sqlalchemy.sql import text
 
@@ -55,8 +56,7 @@ def create_pg_function():
             f_date ALIAS FOR $5;
         BEGIN
          -- If initial_date is not provided, determine the latest available, minus 1
-         
-            SELECT MAX(init_date - INTERVAL '1 day') INTO initial_date
+            SELECT MAX(init_date) INTO initial_date
             FROM public.aemet_dust_warning;
             
             WITH
@@ -181,6 +181,16 @@ def load_warnings():
         next_update = get_next_day(last_update)
     else:
         next_update = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+    target_timezone = pytz.timezone('Europe/Paris')
+    current_time_utc_plus_one = datetime.now(target_timezone)
+
+    # only run after 12:05 UTC+1
+    # This is the time when the AEMET data is likely to have been updated
+    if current_time_utc_plus_one < current_time_utc_plus_one.replace(hour=12, minute=5):
+        logging.warning(f"[WARNINGS]: Skipping warnings update as it is before 12:05 UTC+1. "
+                        f"Current time is {current_time_utc_plus_one}")
+        return
 
     if next_update:
         next_update_str = next_update.strftime("%Y%m%d")
