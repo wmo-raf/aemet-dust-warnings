@@ -3,6 +3,8 @@ services:
     container_name: aemet_warnings
     build:
       context: .
+      args:
+        - DOCKER_COMPOSE_WAIT_PLATFORM_SUFFIX=${DOCKER_COMPOSE_WAIT_PLATFORM_SUFFIX:-}
     restart: ${RESTART_POLICY}
     command: sh -c "/wait && ./docker-entrypoint.sh && gunicorn --bind 0.0.0.0:8000 dustwarning:app"
     volumes:
@@ -18,7 +20,7 @@ services:
     ports:
       - 8000
   aemet-db:
-    image: postgis/postgis:15-master
+    image: ${DB_IMAGE:-postgis/postgis:15-master}
     container_name: aemet_db
     restart: ${RESTART_POLICY}
     environment:
