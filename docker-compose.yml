@@ -9,16 +9,29 @@ services:
       - ${STATE_VOLUME}:/data/state
     environment:
       - DEBUG=False
-      - LOG=${LOG}
-      - WAIT_HOSTS=${WAIT_HOSTS}
-      - WAIT_TIMEOUT=120
+      - WAIT_HOSTS=aemet_db:5432
+      - WAIT_TIMEOUT=60
       - STATE_DIR=/data/state
-      - BOUNDARY_DATA_DIR=/data/boundary_data
-      - SQLALCHEMY_DATABASE_URI=${DATABASE_URI}
+      - SQLALCHEMY_DATABASE_URI=postgresql://${DB_USER}:${DB_PASSWORD}@aemet_db:5432/${DB_NAME}
       - FLASK_APP=dustwarning/__init__.py
+      - COUNTRY_ISO_CODES=${COUNTRY_ISO_CODES}
     ports:
-      - 8000:8000
-networks:
-  default:
-    name: ${AHW_DOCKER_NETWORK}
-    external: true
+      - 8000
+  aemet-db:
+    image: postgis/postgis:15-master
+    container_name: aemet_db
+    restart: ${RESTART_POLICY}
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - 5432
+  aemet-pg-tileserv:
+    image: pramsey/pg_tileserv:latest
+    container_name: aemet_pg_tileserv
+    restart: ${RESTART_POLICY}
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@aemet_db:5432/${DB_NAME}
+    ports:
+      - 7800
