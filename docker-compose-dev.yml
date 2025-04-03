@@ -17,9 +17,9 @@ services:
       - SQLALCHEMY_DATABASE_URI=postgresql://${DB_USER}:${DB_PASSWORD}@aemet_db:5432/${DB_NAME}
       - FLASK_APP=dustwarning/__init__.py
     ports:
-      - ${PORT}:8000
+      - 8000
   aemet-db:
-    image: postgis/postgis:14-master
+    image: postgis/postgis:15-master
     container_name: aemet_db
     restart: ${RESTART_POLICY}
     environment:
@@ -27,4 +27,12 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     ports:
-      - ${DB_PORT}:5432
+      - 5432
+  aemet-pg-tileserv:
+    image: pramsey/pg_tileserv:latest
+    container_name: aemet_pg_tileserv
+    restart: ${RESTART_POLICY}
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@aemet_db:5432/${DB_NAME}
+    ports:
+      - 7800
