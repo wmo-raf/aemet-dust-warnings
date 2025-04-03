@@ -3,6 +3,11 @@ import os
 
 log_level = logging.getLevelName(os.getenv('LOG', "INFO"))
 
+COUNTRY_ISO_CODES = os.getenv('COUNTRY_ISO_CODES')
+
+if COUNTRY_ISO_CODES:
+    COUNTRY_ISO_CODES = COUNTRY_ISO_CODES.split(',')
+
 SETTINGS = {
     'logging': {
         'level': log_level
@@ -21,4 +26,5 @@ SETTINGS = {
     'GRAYLOG_PORT': os.getenv('GRAYLOG_PORT'),
     'API_USERNAME': os.getenv('API_USERNAME'),
     'API_PASSWORD_HASH': os.getenv('API_PASSWORD_HASH'),
+    'COUNTRY_ISO_CODES': COUNTRY_ISO_CODES,
 }

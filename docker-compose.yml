@@ -7,7 +7,6 @@ services:
     command: sh -c "/wait && ./docker-entrypoint.sh && gunicorn --bind 0.0.0.0:8000 dustwarning:app"
     volumes:
       - ${STATE_VOLUME}:/data/state
-      - ${BOUNDARY_DATA_VOLUME}:/data/boundary_data
     environment:
       - DEBUG=False
       - LOG=${LOG}
