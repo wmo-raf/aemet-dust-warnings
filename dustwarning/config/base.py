@@ -27,4 +27,5 @@ SETTINGS = {
     'API_USERNAME': os.getenv('API_USERNAME'),
     'API_PASSWORD_HASH': os.getenv('API_PASSWORD_HASH'),
     'COUNTRY_ISO_CODES': COUNTRY_ISO_CODES,
+    'VERIFY_SSL': os.getenv('VERIFY_SSL', 'True') == 'True',
 }

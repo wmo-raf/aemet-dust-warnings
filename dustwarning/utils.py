@@ -13,6 +13,7 @@ from dustwarning.errors import WarningsNotFound, WarningsRequestError
 
 STATE_DIR = SETTINGS.get("STATE_DIR")
 STATE_FILE = os.path.join(STATE_DIR, "state.json")
+VERIFY_SSL = SETTINGS.get("VERIFY_SSL", True)
 
 
 def copy_with_metadata(source, target):
@@ -49,7 +50,7 @@ def atomic_write(file_contents, target_file_path, mode="w"):
             f.write(file_contents)
             f.flush()
             os.fsync(f.fileno())
-
+        
         os.replace(temp_file.name, target_file_path)
     finally:
         if os.path.exists(temp_file.name):
@@ -76,16 +77,16 @@ def read_state():
             state = json.load(f)
     except json.decoder.JSONDecodeError:
         state = write_empty_state()
-
+    
     return state
 
 
 def update_state(last_update):
     with open(STATE_FILE, 'r') as f:
         state = json.load(f)
-
+    
     state.update({"last_update": last_update})
-
+    
     atomic_write(json.dumps(state, indent=4), STATE_FILE)
 
 
@@ -97,7 +98,7 @@ def get_next_day(datetime_str):
 
 def get_json_warnings(url):
     try:
-        response = requests.get(url)
+        response = requests.get(url, verify=VERIFY_SSL)
         response.raise_for_status()  # Raises HTTPError for bad responses (4xx or 5xx)
         return response.json()
     except requests.exceptions.HTTPError as err:

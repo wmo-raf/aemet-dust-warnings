@@ -13,7 +13,6 @@ from dustwarning.config import SETTINGS
 from .mapping import boundary_config
 from .models import Boundary, DustWarning
 from .utils import read_state, get_next_day, get_json_warnings, update_state
-import os
 
 BOUNDARY_DATA_DIR = os.path.dirname(os.path.abspath(__file__)) + "/boundary_data"
 COUNTRY_ISO_CODES = SETTINGS.get("COUNTRY_ISO_CODES")
@@ -184,7 +183,7 @@ def load_boundaries():
 def load_warnings():
     if not COUNTRY_ISO_CODES:
         logging.info("[WARNING LOADING]: No country ISO codes provided")
-        return
+        return None
     
     state = read_state()
     
@@ -205,7 +204,7 @@ def load_warnings():
     if current_time_utc_plus_one < current_time_utc_plus_one.replace(hour=12, minute=5):
         logging.warning(f"[WARNINGS]: Skipping warnings update as it is before 12:05 UTC+1. "
                         f"Current time is {current_time_utc_plus_one}")
-        return
+        return None
     
     if next_update:
         next_update_str = next_update.strftime("%Y%m%d")
@@ -297,3 +296,5 @@ def load_warnings():
         update_state(next_update_str_iso)
         
         logging.info(f"[WARNINGS]: Done fetching warnings for date {next_update_str}")
+        return None
+    return None
