@@ -38,7 +38,7 @@ services:
     ports:
       - 7800
 
-  networks:
-    default:
-      external: true
-      name: ${DOCKER_NETWORK_NAME}
+networks:
+  default:
+    external: true
+    name: ${DOCKER_NETWORK_NAME}
