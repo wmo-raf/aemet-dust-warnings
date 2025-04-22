@@ -37,3 +37,8 @@ services:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@aemet_db:5432/${DB_NAME}
     ports:
       - 7800
+
+  networks:
+    default:
+      external: true
+      name: ${DOCKER_NETWORK_NAME}
