@@ -58,7 +58,7 @@ def create_pg_function():
         BEGIN
          -- If initial_date is not provided, determine the latest available, minus 1
             SELECT MAX(init_date) INTO initial_date
-            FROM public.aemet_dust_warning;
+            FROM aemet.aemet_dust_warning;
             
             WITH
             bounds AS (
@@ -77,7 +77,7 @@ def create_pg_function():
                         WHEN o.value = 3 THEN 'Extremely High'
                         ELSE 'Unknown'
                     END AS level 
-                FROM public.aemet_dust_warning o, bounds, public.aemet_country_boundary s
+                FROM aemet.aemet_dust_warning o, bounds, aemet.aemet_country_boundary s
                 WHERE s.country_iso=iso AND o.gid=s.gid AND o.init_date=initial_date AND o.forecast_date=f_date
             )
             -- Generate MVT encoding of final input record
