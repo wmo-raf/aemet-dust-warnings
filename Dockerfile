@@ -1,5 +1,5 @@
 # pull base image
-FROM python:3.14-slim-buster
+FROM python:3.10-slim
 
 RUN apt-get update -y && apt-get install -y cron ca-certificates
 
